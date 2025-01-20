@@ -10,26 +10,31 @@ const upload = asyncHandler(async (req, res) => {
       return res.status(400).json({ message: 'No image URL or board ID provided' });
     }
 
-    // Upload the image to Cloudinary
+  
     const result = await cloudinary.uploader.upload(url, {
       folder: 'Moodboard',
     });
 
-    // Create a new image in the Upload model (optional if you need to track details)
+   
     const image = await Upload.create({
-      url: result.secure_url,  // URL from Cloudinary
-      board: boardId,  // The board where the image belongs
-      user: req.user._id,  // The user who uploaded the image
+      url: result.secure_url,  
+      board: boardId,  
+      user: req.user._id,  
       caption: caption || '',
     });
 
-    // Find the board by ID and add the image URL to the board's images array
     const board = await Board.findById(boardId);
     board.images.push(result.secure_url);
-    board.caption.push(caption);  // Push the URL (string) directly into the array
+    board.caption.push(caption);  
 
-    // Save the board with the new image URL added to the images array
+ 
     await board.save();
+
+    if (req.io) {
+      req.io.emit('newUpload', image); 
+  } else {
+      console.error("Socket.io instance (req.io) is not available");
+  }
 
     res.status(201).json(image);
   } catch (error) {
