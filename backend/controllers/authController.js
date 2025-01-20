@@ -69,21 +69,20 @@ const login = asyncHandler(async (req, res) => {
 
 const getProfile = asyncHandler(async (req, res) => {
   try {
-    // Find user by ID and exclude password from the response
+   
     const user = await User.findById(req.user._id).select('-password').populate('boards');
 
-    // Check if user exists
+  
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Send response with counts for followers and following
     res.json({
       profilePicture: user.profilePicture,
       name: user.name,
       email: user.email,
       followersCount: user.followers.length,  
-      followingCount: user.following.length,  // Return count of following
+      followingCount: user.following.length,  
       boards: user.boards,
       boardSuggestions: user.boardSuggestions || [],
       unorganizedIdeas: user.unorganizedIdeas || [],
@@ -136,24 +135,29 @@ const updateProfile = asyncHandler(async (req, res) => {
 
 const savePin = asyncHandler(async (req, res) => {
   try {
-    const user = await User.findById(req.user._id);  // User ID from auth middleware
+    const user = await User.findById(req.user._id); 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Extract image data from request body
+    
     const { imageUrl, photographer, altText } = req.body;
 
-    // Image data is being fetched from Pexels API on frontend
+    
     const pin = {
       imageUrl,
       photographer,
       altText,
     };
 
-    // Save image details to the user's pins array
     user.pins.push(pin);
     await user.save();
+
+    if (req.io) {
+      req.io.emit('newPins', pin); 
+  } else {
+      console.error("Socket.io instance (req.io) is not available");
+  }
 
     res.status(200).json({ message: 'Image pinned successfully', pins: user.pins });
   } catch (error) {
