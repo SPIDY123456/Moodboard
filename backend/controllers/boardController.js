@@ -14,13 +14,19 @@ const getBoards = asyncHandler(async (req, res) => {
 const createBoard = asyncHandler(async (req, res) => {
   const { name } = req.body;
   try {
-    // Create a new board
+ 
     const board = await Board.create({ name, user: req.user._id });
 
-    // Add the board to the user's boards array
+
     const user = await User.findById(req.user._id);
     user.boards.push(board._id);
     await user.save();
+
+    if (req.io) {
+      req.io.emit('newBoard', board); 
+  } else {
+      console.error("Socket.io instance (req.io) is not available");
+  }
 
     res.status(201).json(board);
   } catch (error) {
