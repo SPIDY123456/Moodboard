@@ -21,7 +21,7 @@ const Home = () => {
   const[board,setBoards]  = useState([]);
   const [upload,setUploads] = useState([]);
 
-  const fetchImages = async (query = "pinterest aesthetic", page = 1) => {
+  const fetchImages = async (query = "Majestic Vision", page = 1) => {
     setLoading(true);
     setError(null);
     try {
